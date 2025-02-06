@@ -1,8 +1,8 @@
 import os
 
 # Telegram bot configuration
-BOT_TOKEN = os.environ.get("BOT_TOKEN")
-ADMIN_USER_ID = YOUR ID  # Admin Telegram ID
+BOT_TOKEN = os.environ.get("BOT_TOKEN")  # Отримайте токен у @BotFather
+ADMIN_USER_ID = int(os.environ.get("ADMIN_USER_ID", 0))  # ID адміністратора, отриманий через @userinfobot
 
 # Messages
 HELP_MESSAGE = """
@@ -12,7 +12,7 @@ HELP_MESSAGE = """
 
 Команди адміністратора:
 /a - Меню адміністратора
-/allclear - Очистити всі бали у всіх користувачів
+/ac - Очистити всі бали у всіх користувачів
 """
 
 NOT_ADMIN_MESSAGE = "Вибачте, ця команда доступна тільки для адміністраторів."
