@@ -29,5 +29,3 @@ Telegram bot for managing the user points system with advanced administrative fu
 - `config.py` - Configuration and constants
 - `database.py` - Working with the database
 - `handlers.py` - Command handlers
-
-Translated with www.DeepL.com/Translator (free version)
