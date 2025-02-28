@@ -14,7 +14,7 @@ import handlers
 
 # Configure logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ def signal_handler(signum, frame):
 
 async def error_handler(update, context):
     """Log errors caused by Updates."""
-    logger.error(f"Update {update} caused error {context.error}")
+    logger.error(f"Update {update} caused error {repr(context.error)}")
     if "Conflict" in str(context.error):
         logger.error("Bot instance conflict detected. Please ensure only one instance is running.")
         sys.exit(1)
@@ -64,26 +64,8 @@ def main():
             name="admin_conversation"
         )
 
-        # Add conversation handler for button interactions
-        button_conv_handler = ConversationHandler(
-            entry_points=[CallbackQueryHandler(handlers.button_callback)],
-            states={
-                handlers.CHOOSING_USER: [
-                    CallbackQueryHandler(handlers.user_callback)
-                ],
-                handlers.CHOOSING_POINTS: [
-                    CallbackQueryHandler(handlers.points_callback)
-                ]
-            },
-            fallbacks=[CallbackQueryHandler(handlers.cancel)],
-            per_chat=True,
-            per_message=True,
-            name="button_conversation"
-        )
-
-        # Add handlers
+        # Add handlers for commands
         application.add_handler(admin_conv_handler)
-        application.add_handler(button_conv_handler)
         application.add_handler(CommandHandler("help", handlers.help_command))
         application.add_handler(CommandHandler("top", handlers.show_top))
         application.add_handler(CommandHandler("ac", handlers.clear_all_points))
@@ -112,7 +94,7 @@ def main():
         application.run_polling(drop_pending_updates=True)
 
     except Exception as e:
-        logger.error(f"Critical error: {str(e)}")
+        logger.error(f"Critical error: {repr(e)}")
         sys.exit(1)
 
 if __name__ == '__main__':
