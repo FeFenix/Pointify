@@ -54,7 +54,7 @@ def main():
                 handlers.CHOOSING_USER: [
                     CallbackQueryHandler(handlers.user_callback)
                 ],
-                handlers.ENTERING_POINTS: [
+                handlers.CHOOSING_POINTS: [
                     MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.points_entered)
                 ]
             },
