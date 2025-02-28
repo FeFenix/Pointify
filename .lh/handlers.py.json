@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1740776980511,
@@ -16,6 +16,10 @@
                 {
                     "date": 1740780313728,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -356,5 +356,6 @@\n         await update.message.reply_text(message)\r\n         return ConversationHandler.END\r\n     except Exception as e:\r\n         logger.error(f\"Error in show_top: {repr(e)}\")\r\n-        return ConversationHandler.END\n\\ No newline at end of file\n+        return ConversationHandler.END\r\n+    #asdasdasd\n\\ No newline at end of file\n"
+                },
+                {
+                    "date": 1740780893401,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -356,6 +356,5 @@\n         await update.message.reply_text(message)\r\n         return ConversationHandler.END\r\n     except Exception as e:\r\n         logger.error(f\"Error in show_top: {repr(e)}\")\r\n-        return ConversationHandler.END\r\n-    #asdasdasd\n\\ No newline at end of file\n+        return ConversationHandler.END\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1740776980511,

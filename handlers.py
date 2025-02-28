@@ -358,4 +358,3 @@ async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         logger.error(f"Error in show_top: {repr(e)}")
         return ConversationHandler.END
-    #asdasdasd

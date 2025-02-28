@@ -80,7 +80,7 @@ def get_db():
         yield db
         db.commit()
     except Exception as e:
-        logger.error(f"Database transaction failed: {e}")
+        logger.error(f"Database transaction failed: {repr(e)}")
         db.rollback()
         raise
     finally:
@@ -137,7 +137,7 @@ class Database:
 
                 return True
         except Exception as e:
-            logger.error(f"Error in add_points: {e}")
+            logger.error(f"Error in add_points: {repr(e)}")
             return False
 
     def subtract_points(self, chat_id: int, user_id: int, points: int, username: str = None) -> bool:
@@ -164,7 +164,7 @@ class Database:
 
                 return True
         except Exception as e:
-            logger.error(f"Error in subtract_points: {e}")
+            logger.error(f"Error in subtract_points: {repr(e)}")
             return False
 
     def get_user_points(self, chat_id: int, user_id: int = None) -> int:
@@ -177,7 +177,7 @@ class Database:
                 ).scalar()
                 return points or 0
         except Exception as e:
-            logger.error(f"Error in get_user_points: {e}")
+            logger.error(f"Error in get_user_points: {repr(e)}")
             return 0
 
     def get_top_users(self, chat_id: int, limit: int = 10) -> list:
@@ -199,7 +199,7 @@ class Database:
                     "username": user.username
                 }) for user in users]
         except Exception as e:
-            logger.error(f"Error in get_top_users: {e}")
+            logger.error(f"Error in get_top_users: {repr(e)}")
             return []
 
     def add_admin(self, chat_id: int, user_id: int):
