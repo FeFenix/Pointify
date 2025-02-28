@@ -49,13 +49,13 @@ def main():
             entry_points=[CommandHandler("a", handlers.admin_command)],
             states={
                 handlers.CHOOSING_ACTION: [
-                    CallbackQueryHandler(handlers.button_callback)
+                    CallbackQueryHandler(handlers.button_callback, per_message=True)
                 ],
                 handlers.CHOOSING_USER: [
-                    CallbackQueryHandler(handlers.user_callback)
+                    CallbackQueryHandler(handlers.user_callback, per_message=True)
                 ],
                 handlers.CHOOSING_POINTS: [
-                    CallbackQueryHandler(handlers.points_callback)
+                    CallbackQueryHandler(handlers.points_callback, per_message=True)
                 ]
             },
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
@@ -84,7 +84,7 @@ def main():
 
         # Add handler to delete chat data when bot is removed from a chat
         application.add_handler(MessageHandler(
-            filters.StatusUpdate.MY_CHAT_MEMBER,
+            filters.StatusUpdate.LEFT_CHAT_MEMBER,
             handlers.handle_bot_removed
         ))
 
