@@ -75,6 +75,12 @@ def main():
             handlers.handle_user_message
         ))
 
+        # Add handler to fetch and store users when bot is added to a chat
+        application.add_handler(MessageHandler(
+            filters.StatusUpdate.NEW_CHAT_MEMBERS,
+            handlers.fetch_and_store_users
+        ))
+
         # Start the bot
         logger.info("Bot started successfully")
         application.run_polling(drop_pending_updates=True)
@@ -85,4 +91,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    

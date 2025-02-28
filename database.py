@@ -62,6 +62,13 @@ class UserPoints(Base):
     username = Column(String)
     points = Column(Integer, default=0)
 
+class Admins(Base):
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    chat_id = Column(BigInteger, index=True)
+    user_id = Column(BigInteger, index=True)
+
 # Create tables only if they don't exist
 Base.metadata.create_all(bind=engine, checkfirst=True)
 
@@ -195,3 +202,24 @@ class Database:
         except Exception as e:
             logger.error(f"Error in get_top_users: {e}")
             return []
+
+    def add_admin(self, chat_id: int, user_id: int):
+        """Add an admin to the database"""
+        with get_db() as db:
+            admin = db.query(Admins).filter(
+                Admins.chat_id == chat_id,
+                Admins.user_id == user_id
+            ).first()
+
+            if not admin:
+                admin = Admins(chat_id=chat_id, user_id=user_id)
+                db.add(admin)
+
+    def is_admin(self, chat_id: int, user_id: int) -> bool:
+        """Check if a user is an admin in a specific chat"""
+        with get_db() as db:
+            admin = db.query(Admins).filter(
+                Admins.chat_id == chat_id,
+                Admins.user_id == user_id
+            ).first()
+            return admin is not None

@@ -23,9 +23,33 @@ CHOOSING_ACTION, CHOOSING_USER, ENTERING_POINTS = range(3)
 # Initialize database
 db = Database()
 
-def is_admin(user_id: int) -> bool:
+async def fetch_and_store_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch and store all users and admins when the bot is added to a chat"""
+    try:
+        chat = update.effective_chat
+        if not chat:
+            return
+
+        # Fetch all members
+        members = await context.bot.get_chat_administrators(chat.id)
+        for member in members:
+            user = member.user
+            db.add_points(chat.id, user.id, 0, user.username)
+            if member.status in ['administrator', 'creator']:
+                db.add_admin(chat.id, user.id)
+
+        # Fetch all regular users
+        async for member in context.bot.get_chat_members(chat.id):
+            user = member.user
+            db.add_points(chat.id, user.id, 0, user.username)
+
+        logger.info(f"Fetched and stored all users and admins for chat {chat.id}")
+    except Exception as e:
+        logger.error(f"Error fetching and storing users: {str(e)}")
+
+def is_admin(user_id: int, chat_id: int) -> bool:
     """Check if user is admin"""
-    return user_id == config.ADMIN_USER_ID
+    return db.is_admin(chat_id, user_id)
 
 async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle regular messages to track users"""
@@ -47,10 +71,11 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /a command"""
     try:
         user = update.effective_user
-        if not user:
+        chat = update.effective_chat
+        if not user or not chat:
             return ConversationHandler.END
 
-        if not is_admin(user.id):
+        if not is_admin(user.id, chat.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
@@ -90,7 +115,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = query.message.chat_id
         await query.answer()
 
-        if not is_admin(update.effective_user.id):
+        if not is_admin(update.effective_user.id, chat_id):
             await query.message.edit_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
@@ -256,7 +281,7 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def clear_all_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /allclear command"""
     try:
-        if not is_admin(update.effective_user.id):
+        if not is_admin(update.effective_user.id, update.effective_chat.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
             return
 
