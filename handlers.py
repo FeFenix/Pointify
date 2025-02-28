@@ -34,6 +34,30 @@ async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE, user_id: 
         logger.error(f"Помилка перевірки адміністратора: {e}")
         return False
 
+
+
+async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle the /top command"""
+    try:
+        chat_id = update.effective_chat.id
+        top_users = db.get_top_users(chat_id, 10)
+
+        if not top_users:
+            await update.message.reply_text("В базі даних ще немає користувачів!")
+            return
+
+        message = "⚠️👀 Люди, Що Бачили Все! 👀⚠️\n\n"
+        for i, (user_id, user_data) in enumerate(top_users, 1):
+            username = user_data["username"] or f"User {user_id}"
+            emoji = "👑" if i == 1 else "🏆" if i == 2 else "🐉" if i == 3 else "🚀"
+            message += f"{i}. {emoji} @{username}: {user_data['points']} балів\n"
+
+        await update.message.reply_text(message)
+    except Exception as e:
+        logger.error(f"Error in show_top: {str(e)}")
+
+
+
 async def track_new_members(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Обробляє подію додавання бота до чату"""
     try:
