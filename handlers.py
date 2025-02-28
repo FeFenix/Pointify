@@ -214,8 +214,8 @@ async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = context.user_data.get('chat_id')
         user_id = db.get_user_id_by_username(chat_id, username)
-        user_points = db.get_user_points(chat_id, user_id)
-        user_rank = db.get_user_rank(chat_id, user_id)
+        user_points = db.get_user_points(chat_id, user_id, username)
+        user_rank = db.get_user_rank(chat_id, user_id, username)
 
         text = "додати" if action == "add" else "забрати"
         await query.message.edit_text(

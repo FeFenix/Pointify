@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 1,
+            "activePatchIndex": 2,
             "patches": [
                 {
                     "date": 1740776980511,
@@ -12,6 +12,10 @@
                 {
                     "date": 1740777665776,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -301,13 +301,13 @@\n             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)\r\n             return ConversationHandler.END\r\n \r\n         text = update.message.text.split()\r\n-        if len(text) != 3:\r\n+        if len(text) != 2:\r\n             await update.message.reply_text(config.INVALID_FORMAT_MESSAGE)\r\n-            return ConversationHandler.END\r\n+            return ADDING_USER\r\n \r\n-        username, points = text[1], int(text[2])\r\n+        username, points = text[0], int(text[1])\r\n         chat_id = update.effective_chat.id\r\n         user_id = -abs(hash(username))  # Create a temporary user ID\r\n \r\n         db.add_points(chat_id, user_id, points, username)\r\n"
+                },
+                {
+                    "date": 1740778303588,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -213,10 +213,10 @@\n             return ConversationHandler.END\r\n \r\n         chat_id = context.user_data.get('chat_id')\r\n         user_id = db.get_user_id_by_username(chat_id, username)\r\n-        user_points = db.get_user_points(chat_id, user_id)\r\n-        user_rank = db.get_user_rank(chat_id, user_id)\r\n+        user_points = db.get_user_points(chat_id, user_id, username)\r\n+        user_rank = db.get_user_rank(chat_id, user_id, username)\r\n \r\n         text = \"додати\" if action == \"add\" else \"забрати\"\r\n         await query.message.edit_text(\r\n             f\"Введіть кількість балів, які хочете {text} для користувача @{username}:\\n\\n\"\r\n"
                 }
             ],
             "date": 1740776980511,
