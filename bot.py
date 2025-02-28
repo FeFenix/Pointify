@@ -56,9 +56,6 @@ def main():
                 ],
                 handlers.CHOOSING_POINTS: [
                     CallbackQueryHandler(handlers.points_callback)
-                ],
-                handlers.ADDING_USER: [
-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.add_user)
                 ]
             },
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
