@@ -59,7 +59,7 @@ def main():
                 ]
             },
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
-            per_chat=True,  # Змінено з False на True
+            per_chat=False,
             name="admin_conversation"
         )
 
@@ -85,3 +85,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+    
