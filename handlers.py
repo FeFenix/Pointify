@@ -88,25 +88,6 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
-        # If the command is sent in a group chat, send a message to the admin's private chat
-        if chat.type != 'private':
-            await context.bot.send_message(
-                chat_id=user.id,
-                text="Ви викликали адмін-меню. Продовжимо в приватному чаті.",
-                reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("Продовжити", callback_data=f"start_admin_{chat.id}")]
-                ])
-            )
-            return ConversationHandler.END
-
-        return await start_admin_panel(update, context, chat.id)
-    except Exception as e:
-        logger.error(f"Error in admin_command: {repr(e)}")
-        return ConversationHandler.END
-
-async def start_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE, chat_id: int):
-    """Start the admin panel interaction"""
-    try:
         # Store the command message ID for later deletion
         context.user_data['messages_to_delete'] = [update.message.message_id]
 
@@ -126,10 +107,9 @@ async def start_admin_panel(update: Update, context: ContextTypes.DEFAULT_TYPE, 
         )
         # Store menu message ID
         context.user_data['messages_to_delete'].append(menu_message.message_id)
-        context.user_data['chat_id'] = chat_id
         return CHOOSING_ACTION
     except Exception as e:
-        logger.error(f"Error in start_admin_panel: {repr(e)}")
+        logger.error(f"Error in admin_command: {repr(e)}")
         return ConversationHandler.END
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -143,7 +123,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle button callbacks"""
     try:
         query = update.callback_query
-        chat_id = context.user_data.get('chat_id')
+        chat_id = query.message.chat_id
         await query.answer()
 
         if not is_admin(update.effective_user.id, chat_id):
@@ -180,6 +160,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
 
         context.user_data['action'] = action
+        context.user_data['chat_id'] = chat_id
 
         users = db.get_all_users(chat_id)
         keyboard = []
@@ -320,14 +301,6 @@ async def add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
-        # If the command is sent in a group chat, send a message to the admin's private chat
-        if chat.type != 'private':
-            await context.bot.send_message(
-                chat_id=user.id,
-                text="Ви викликали команду додавання користувача. Продовжимо в приватному чаті."
-            )
-            return ConversationHandler.END
-
         text = update.message.text.split()
         if len(text) != 3:
             await update.message.reply_text(config.INVALID_FORMAT_MESSAGE)
@@ -407,14 +380,6 @@ async def clear_all_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not is_admin(user.id, chat.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
-            return ConversationHandler.END
-
-        # If the command is sent in a group chat, send a message to the admin's private chat
-        if chat.type != 'private':
-            await context.bot.send_message(
-                chat_id=user.id,
-                text="Ви викликали команду очищення балів. Продовжимо в приватному чаті."
-            )
             return ConversationHandler.END
 
         chat_id = update.effective_chat.id

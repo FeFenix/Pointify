@@ -64,8 +64,7 @@ def main():
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
             per_chat=True,
             per_message=False,  # Set per_message to False
-            name="admin_conversation",
-            allow_reentry=True,  # Allow reentry to handle private chat interactions
+            name="admin_conversation"
         )
 
         # Add handlers for commands
