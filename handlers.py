@@ -214,8 +214,8 @@ async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         chat_id = context.user_data.get('chat_id')
         user_id = db.get_user_id_by_username(chat_id, username)
-        user_points = db.get_user_points(chat_id, user_id, username)
-        user_rank = db.get_user_rank(chat_id, user_id, username)
+        user_points = db.get_user_points(chat_id, user_id)
+        user_rank = db.get_user_rank(chat_id, user_id)
 
         text = "додати" if action == "add" else "забрати"
         await query.message.edit_text(
@@ -302,11 +302,11 @@ async def add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
 
         text = update.message.text.split()
-        if len(text) != 2:
+        if len(text) != 3:
             await update.message.reply_text(config.INVALID_FORMAT_MESSAGE)
-            return ADDING_USER
+            return ConversationHandler.END
 
-        username, points = text[0], int(text[1])
+        username, points = text[1], int(text[2])
         chat_id = update.effective_chat.id
         user_id = -abs(hash(username))  # Create a temporary user ID
 
