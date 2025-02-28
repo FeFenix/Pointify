@@ -5,7 +5,8 @@ from telegram.ext import (
     ConversationHandler,
     CallbackQueryHandler,
     MessageHandler,
-    filters
+    filters,
+    CommandHandler
 )
 import config
 from database import Database
@@ -77,6 +78,7 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /a command"""
     try:
+        logger.info("Admin command invoked")
         user = update.effective_user
         chat = update.effective_chat
         if not user or not chat:
