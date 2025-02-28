@@ -56,6 +56,9 @@ def main():
                 ],
                 handlers.CHOOSING_POINTS: [
                     CallbackQueryHandler(handlers.points_callback)
+                ],
+                handlers.ADDING_USER: [
+                    MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.add_user)
                 ]
             },
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
@@ -70,6 +73,7 @@ def main():
         application.add_handler(CommandHandler("top", handlers.show_top))
         application.add_handler(CommandHandler("ac", handlers.clear_all_points))
         application.add_handler(CommandHandler("cancel", handlers.cancel))
+        application.add_handler(CommandHandler("adduser", handlers.add_user_command))
 
         # Add message handler to track users (outside of conversation)
         application.add_handler(MessageHandler(
