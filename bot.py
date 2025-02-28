@@ -59,7 +59,7 @@ def main():
                 ]
             },
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
-            per_chat=False,
+            per_chat=True,  # Змінено з False на True
             name="admin_conversation"
         )
 
