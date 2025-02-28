@@ -275,7 +275,14 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return ConversationHandler.END
 
 async def clear_all_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle the /allclear command"""
+    """Handle the /ac command"""
     try:
         if not await is_admin(update, context, update.effective_user.id):
-            await update.message
+            await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
+            return
+
+        chat_id = update.effective_chat.id
+        db.clear_all_points(chat_id)
+        await update.message.reply_text("Всі бали були успішно очищені!")
+    except Exception as e:
+        logger.error(f"Error in clear_all_points: {str(e)}")
