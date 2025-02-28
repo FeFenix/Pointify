@@ -49,17 +49,18 @@ def main():
             entry_points=[CommandHandler("a", handlers.admin_command)],
             states={
                 handlers.CHOOSING_ACTION: [
-                    CallbackQueryHandler(handlers.button_callback, per_message=True)
+                    CallbackQueryHandler(handlers.button_callback)
                 ],
                 handlers.CHOOSING_USER: [
-                    CallbackQueryHandler(handlers.user_callback, per_message=True)
+                    CallbackQueryHandler(handlers.user_callback)
                 ],
                 handlers.CHOOSING_POINTS: [
-                    CallbackQueryHandler(handlers.points_callback, per_message=True)
+                    CallbackQueryHandler(handlers.points_callback)
                 ]
             },
             fallbacks=[CommandHandler("cancel", handlers.cancel)],
             per_chat=False,
+            per_message=True,
             name="admin_conversation"
         )
 
