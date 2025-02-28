@@ -46,7 +46,7 @@ def main():
 
         # Add conversation handler for points management
         conv_handler = ConversationHandler(
-            entry_points=[CommandHandler("a", handlers.admin_command)],
+            entry_points=[CallbackQueryHandler(handlers.admin_command)],
             states={
                 handlers.CHOOSING_ACTION: [
                     CallbackQueryHandler(handlers.button_callback)
@@ -58,8 +58,8 @@ def main():
                     CallbackQueryHandler(handlers.points_callback)
                 ]
             },
-            fallbacks=[CommandHandler("cancel", handlers.cancel)],
-            per_chat=False,
+            fallbacks=[CallbackQueryHandler(handlers.cancel)],
+            per_chat=True,
             per_message=True,
             name="admin_conversation"
         )
