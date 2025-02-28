@@ -302,11 +302,11 @@ async def add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
             return ConversationHandler.END
 
         text = update.message.text.split()
-        if len(text) != 3:
+        if len(text) != 2:
             await update.message.reply_text(config.INVALID_FORMAT_MESSAGE)
-            return ConversationHandler.END
+            return ADDING_USER
 
-        username, points = text[1], int(text[2])
+        username, points = text[0], int(text[1])
         chat_id = update.effective_chat.id
         user_id = -abs(hash(username))  # Create a temporary user ID
 

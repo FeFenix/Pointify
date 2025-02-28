@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1740776980511,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1740777665776,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -301,13 +301,13 @@\n             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)\r\n             return ConversationHandler.END\r\n \r\n         text = update.message.text.split()\r\n-        if len(text) != 3:\r\n+        if len(text) != 2:\r\n             await update.message.reply_text(config.INVALID_FORMAT_MESSAGE)\r\n-            return ConversationHandler.END\r\n+            return ADDING_USER\r\n \r\n-        username, points = text[1], int(text[2])\r\n+        username, points = text[0], int(text[1])\r\n         chat_id = update.effective_chat.id\r\n         user_id = -abs(hash(username))  # Create a temporary user ID\r\n \r\n         db.add_points(chat_id, user_id, points, username)\r\n"
                 }
             ],
             "date": 1740776980511,
