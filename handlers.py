@@ -208,6 +208,7 @@ async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def points_entered(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle points entry"""
     try:
+        logger.info("Entering points_entered function")
         if 'messages_to_delete' not in context.user_data:
             context.user_data['messages_to_delete'] = []
 
@@ -240,6 +241,8 @@ async def points_entered(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             db.subtract_points(chat_id, user_id, points, username)
             message = f"{config.POINTS_UPDATED_MESSAGE} Користувач: @{username}, Бали: -{points}"
+
+        logger.info(f"Points updated for user {username}: {points} points")
 
         keyboard = [
             [
