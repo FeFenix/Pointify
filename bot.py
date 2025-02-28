@@ -44,8 +44,8 @@ def main():
         # Register error handler
         application.add_error_handler(error_handler)
 
-        # Add conversation handler for points management
-        conv_handler = ConversationHandler(
+        # Add conversation handler for admin commands
+        admin_conv_handler = ConversationHandler(
             entry_points=[CommandHandler("a", handlers.admin_command)],
             states={
                 handlers.CHOOSING_ACTION: [
@@ -64,8 +64,26 @@ def main():
             name="admin_conversation"
         )
 
+        # Add conversation handler for button interactions
+        button_conv_handler = ConversationHandler(
+            entry_points=[CallbackQueryHandler(handlers.button_callback)],
+            states={
+                handlers.CHOOSING_USER: [
+                    CallbackQueryHandler(handlers.user_callback)
+                ],
+                handlers.CHOOSING_POINTS: [
+                    CallbackQueryHandler(handlers.points_callback)
+                ]
+            },
+            fallbacks=[CallbackQueryHandler(handlers.cancel)],
+            per_chat=True,
+            per_message=True,
+            name="button_conversation"
+        )
+
         # Add handlers
-        application.add_handler(conv_handler)
+        application.add_handler(admin_conv_handler)
+        application.add_handler(button_conv_handler)
         application.add_handler(CommandHandler("help", handlers.help_command))
         application.add_handler(CommandHandler("top", handlers.show_top))
         application.add_handler(CommandHandler("ac", handlers.clear_all_points))
@@ -99,5 +117,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-    #Шото не робе воно
