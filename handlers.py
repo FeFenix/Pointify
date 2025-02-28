@@ -81,7 +81,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [
                 InlineKeyboardButton("Додати бали", callback_data='add'),
                 InlineKeyboardButton("Забрати бали", callback_data='subtract')
-            ]
+            ],
+            [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -116,6 +117,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         action = query.data
 
+        if action == 'delete_system_messages':
+            return await delete_system_messages(update, context)
+
         # Handle finish action
         if action == 'finish':
             # Delete the original command message and all bot responses
@@ -145,6 +149,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard.append([InlineKeyboardButton(f"@{username}", callback_data=f"user_{username}")])
 
         keyboard.append([InlineKeyboardButton("Завершити", callback_data='finish')])
+        keyboard.append([InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')])
 
         if not keyboard:
             message = await query.message.edit_text("Наразі немає користувачів у цьому чаті.")
@@ -190,7 +195,10 @@ async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         text = "додати" if action == "add" else "забрати"
         await query.message.edit_text(
-            f"Введіть кількість балів, які хочете {text} для користувача @{username}:"
+            f"Введіть кількість балів, які хочете {text} для користувача @{username}:",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
+            ])
         )
         return ENTERING_POINTS
     except Exception as e:
@@ -238,7 +246,8 @@ async def points_entered(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 InlineKeyboardButton("Додати бали", callback_data='add'),
                 InlineKeyboardButton("Забрати бали", callback_data='subtract')
             ],
-            [InlineKeyboardButton("Завершити", callback_data='finish')]
+            [InlineKeyboardButton("Завершити", callback_data='finish')],
+            [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -273,6 +282,28 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         logger.error(f"Error in cancel: {str(e)}")
         return ConversationHandler.END
 
+async def delete_system_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delete system messages"""
+    try:
+        query = update.callback_query
+        chat_id = query.message.chat_id
+        await query.answer()
+
+        if 'messages_to_delete' in context.user_data:
+            for message_id in context.user_data['messages_to_delete']:
+                try:
+                    await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                except Exception as e:
+                    logger.error(f"Error deleting message {message_id}: {str(e)}")
+                    continue
+
+        context.user_data.clear()
+        await query.message.edit_text("Системні повідомлення видалено.")
+        return ConversationHandler.END
+    except Exception as e:
+        logger.error(f"Error in delete_system_messages: {str(e)}")
+        return ConversationHandler.END
+
 async def clear_all_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /allclear command"""
     try:
@@ -294,7 +325,7 @@ async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not top_users:
             await update.message.reply_text("В базі даних ще немає користувачів!")
-            return
+            return ConversationHandler.END
 
         message = "⚠️👀 Люди, Що Бачили Все! 👀⚠️\n\n"
         for i, (user_id, user_data) in enumerate(top_users, 1):
@@ -303,5 +334,7 @@ async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message += f"{i}. {emoji} @{username}: {user_data['points']} балів\n"
 
         await update.message.reply_text(message)
+        return ConversationHandler.END
     except Exception as e:
         logger.error(f"Error in show_top: {str(e)}")
+        return ConversationHandler.END

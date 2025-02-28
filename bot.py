@@ -68,6 +68,7 @@ def main():
         application.add_handler(CommandHandler("help", handlers.help_command))
         application.add_handler(CommandHandler("top", handlers.show_top))
         application.add_handler(CommandHandler("ac", handlers.clear_all_points))
+        application.add_handler(CommandHandler("cancel", handlers.cancel))
 
         # Add message handler to track users (outside of conversation)
         application.add_handler(MessageHandler(
