@@ -82,6 +82,12 @@ def main():
             handlers.fetch_and_store_users
         ))
 
+        # Add handler to delete chat data when bot is removed from a chat
+        application.add_handler(MessageHandler(
+            filters.StatusUpdate.MY_CHAT_MEMBER,
+            handlers.handle_bot_removed
+        ))
+
         # Start the bot
         logger.info("Bot started successfully")
         application.run_polling(drop_pending_updates=True)

@@ -223,3 +223,18 @@ class Database:
                 Admins.user_id == user_id
             ).first()
             return admin is not None
+
+    def delete_chat_data(self, chat_id: int):
+        """Delete all data related to a specific chat"""
+        with get_db() as db:
+            db.query(UserPoints).filter(UserPoints.chat_id == chat_id).delete()
+            db.query(Admins).filter(Admins.chat_id == chat_id).delete()
+
+    def get_user_rank(self, chat_id: int, user_id: int) -> int:
+        """Get the rank of a user in a specific chat"""
+        with get_db() as db:
+            users = db.query(UserPoints).filter(UserPoints.chat_id == chat_id).order_by(UserPoints.points.desc()).all()
+            for rank, user in enumerate(users, 1):
+                if user.user_id == user_id:
+                    return rank
+            return -1
