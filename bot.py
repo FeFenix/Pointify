@@ -61,7 +61,7 @@ def main():
                     MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.add_user)
                 ]
             },
-            fallbacks=[CommandHandler("cancel", handlers.cancel)],
+            fallbacks=[CallbackQueryHandler(handlers.cancel)],
             per_chat=True,
             per_message=False,  # Set per_message to False
             name="admin_conversation"
@@ -103,5 +103,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-#asdasdasdasd

@@ -1,0 +1,18 @@
+{
+    "sourceFile": "migrations/001_add_manual_name_column.py",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1740778768900,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1740778768900,
+            "name": "Commit-0",
+            "content": "from sqlalchemy import create_engine, Column, String\nfrom sqlalchemy.ext.declarative import declarative_base\nfrom sqlalchemy.orm import sessionmaker\nimport os\n\nDATABASE_URL = os.environ.get(\"DATABASE_URL\")\nif DATABASE_URL is None:\n    raise Exception(\"DATABASE_URL environment variable is not set\")\n\nengine = create_engine(DATABASE_URL)\nSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)\nBase = declarative_base()\n\nclass UserPoints(Base):\n    __tablename__ = \"user_points\"\n    id = Column(Integer, primary_key=True, index=True)\n    chat_id = Column(BigInteger, index=True)\n    user_id = Column(BigInteger, index=True, nullable=True)\n    username = Column(String, nullable=True)\n    manual_name = Column(String, nullable=True)\n    points = Column(Integer, default=0)\n\ndef upgrade():\n    \"\"\"Add manual_name column to user_points table\"\"\"\n    with engine.connect() as connection:\n        connection.execute(\"ALTER TABLE user_points ADD COLUMN manual_name VARCHAR\")\n\nif __name__ == \"__main__\":\n    upgrade()\n"
+        }
+    ]
+}
