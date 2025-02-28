@@ -19,7 +19,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Define states
-CHOOSING_ACTION, CHOOSING_USER, CHOOSING_POINTS, ADDING_USER = range(4)
+CHOOSING_ACTION, CHOOSING_USER, CHOOSING_POINTS = range(3)
 
 # Initialize database
 db = Database()
@@ -96,8 +96,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 InlineKeyboardButton("Додати бали", callback_data='add'),
                 InlineKeyboardButton("Забрати бали", callback_data='subtract')
             ],
-            [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')],
-            [InlineKeyboardButton("Додати користувача", callback_data='add_user')]
+            [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -134,10 +133,6 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if action == 'delete_system_messages':
             return await delete_system_messages(update, context)
-
-        if action == 'add_user':
-            await query.message.edit_text("Введіть ім'я користувача та кількість балів у форматі: ім'я кількість_балів")
-            return ADDING_USER
 
         # Handle finish action
         if action == 'finish':
@@ -287,52 +282,6 @@ async def points_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return CHOOSING_ACTION
     except Exception as e:
         logger.error(f"Error in points_callback: {repr(e)}")
-        return ConversationHandler.END
-
-async def add_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle adding a user manually"""
-    try:
-        user = update.effective_user
-        chat = update.effective_chat
-        if not user or not chat:
-            return ConversationHandler.END
-
-        if not is_admin(user.id, chat.id):
-            await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
-            return ConversationHandler.END
-
-        text = update.message.text.split()
-        if len(text) != 3:
-            await update.message.reply_text(config.INVALID_FORMAT_MESSAGE)
-            return ConversationHandler.END
-
-        username, points = text[1], int(text[2])
-        chat_id = update.effective_chat.id
-        user_id = -abs(hash(username))  # Create a temporary user ID
-
-        db.add_points(chat_id, user_id, points, username)
-        await update.message.reply_text(f"Користувача {username} додано з {points} балами.")
-        return ConversationHandler.END
-    except Exception as e:
-        logger.error(f"Error in add_user: {repr(e)}")
-        return ConversationHandler.END
-
-async def add_user_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle the /adduser command"""
-    try:
-        user = update.effective_user
-        chat = update.effective_chat
-        if not user or not chat:
-            return ConversationHandler.END
-
-        if not is_admin(user.id, chat.id):
-            await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
-            return ConversationHandler.END
-
-        await update.message.reply_text("Введіть ім'я користувача та кількість балів у форматі: ім'я кількість_балів")
-        return ADDING_USER
-    except Exception as e:
-        logger.error(f"Error in add_user_command: {repr(e)}")
         return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):

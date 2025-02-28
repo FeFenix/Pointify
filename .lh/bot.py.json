@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1740776986871,
@@ -16,6 +16,10 @@
                 {
                     "date": 1740779496280,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -60,9 +60,9 @@\n                 handlers.ADDING_USER: [\r\n                     MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.add_user)\r\n                 ]\r\n             },\r\n-            fallbacks=[CallbackQueryHandler(handlers.cancel)],\r\n+            fallbacks=[CommandHandler(\"cancel\", handlers.cancel)],\r\n             per_chat=True,\r\n             per_message=False,  # Set per_message to False\r\n             name=\"admin_conversation\"\r\n         )\r\n@@ -101,5 +101,5 @@\n         logger.error(f\"Critical error: {repr(e)}\")\r\n         sys.exit(1)\r\n \r\n if __name__ == '__main__':\r\n-    main()\n\\ No newline at end of file\n+    main()\r\n"
+                },
+                {
+                    "date": 1740779938461,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -72,9 +72,8 @@\n         application.add_handler(CommandHandler(\"help\", handlers.help_command))\r\n         application.add_handler(CommandHandler(\"top\", handlers.show_top))\r\n         application.add_handler(CommandHandler(\"ac\", handlers.clear_all_points))\r\n         application.add_handler(CommandHandler(\"cancel\", handlers.cancel))\r\n-        application.add_handler(CommandHandler(\"adduser\", handlers.add_user_command))\r\n \r\n         # Add message handler to track users (outside of conversation)\r\n         application.add_handler(MessageHandler(\r\n             filters.TEXT & ~filters.COMMAND,\r\n"
                 }
             ],
             "date": 1740776986871,

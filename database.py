@@ -60,7 +60,6 @@ class UserPoints(Base):
     chat_id = Column(BigInteger, index=True)
     user_id = Column(BigInteger, index=True, nullable=True)
     username = Column(String, nullable=True)
-    manual_name = Column(String, nullable=True)
     points = Column(Integer, default=0)
 
 class Admins(Base):
@@ -109,18 +108,18 @@ class Database:
     def get_all_users(self, chat_id: int) -> list:
         """Get list of all usernames in specific chat"""
         with get_db() as db:
-            users = db.query(UserPoints.username, UserPoints.manual_name).filter(
+            users = db.query(UserPoints.username).filter(
                 UserPoints.chat_id == chat_id
             ).all()
-            return [user.username or user.manual_name for user in users]
+            return [user.username for user in users]
 
-    def add_points(self, chat_id: int, user_id: int, points: int, username: str = None, manual_name: str = None) -> bool:
+    def add_points(self, chat_id: int, user_id: int, points: int, username: str = None) -> bool:
         """Add points to a user in specific chat"""
         try:
             with get_db() as db:
                 user = db.query(UserPoints).filter(
                     UserPoints.chat_id == chat_id,
-                    (UserPoints.user_id == user_id) | (UserPoints.manual_name == manual_name)
+                    UserPoints.user_id == user_id
                 ).first()
 
                 if not user:
@@ -128,15 +127,12 @@ class Database:
                         chat_id=chat_id,
                         user_id=user_id,
                         points=points,
-                        username=username,
-                        manual_name=manual_name
+                        username=username
                     )
                     db.add(user)
                 else:
                     if username and user.username != username:
                         user.username = username
-                    if manual_name and user.manual_name != manual_name:
-                        user.manual_name = manual_name
                     user.points += points
 
                 return True
@@ -144,13 +140,13 @@ class Database:
             logger.error(f"Error in add_points: {e}")
             return False
 
-    def subtract_points(self, chat_id: int, user_id: int, points: int, username: str = None, manual_name: str = None) -> bool:
+    def subtract_points(self, chat_id: int, user_id: int, points: int, username: str = None) -> bool:
         """Subtract points from a user in specific chat"""
         try:
             with get_db() as db:
                 user = db.query(UserPoints).filter(
                     UserPoints.chat_id == chat_id,
-                    (UserPoints.user_id == user_id) | (UserPoints.manual_name == manual_name)
+                    UserPoints.user_id == user_id
                 ).first()
 
                 if not user:
@@ -158,15 +154,12 @@ class Database:
                         chat_id=chat_id,
                         user_id=user_id,
                         points=0,
-                        username=username,
-                        manual_name=manual_name
+                        username=username
                     )
                     db.add(user)
 
                 if username and user.username != username:
                     user.username = username
-                if manual_name and user.manual_name != manual_name:
-                    user.manual_name = manual_name
                 user.points -= points
 
                 return True
@@ -174,13 +167,13 @@ class Database:
             logger.error(f"Error in subtract_points: {e}")
             return False
 
-    def get_user_points(self, chat_id: int, user_id: int = None, manual_name: str = None) -> int:
+    def get_user_points(self, chat_id: int, user_id: int = None) -> int:
         """Get points for a specific user in specific chat"""
         try:
             with get_db() as db:
                 points = db.query(UserPoints.points).filter(
                     UserPoints.chat_id == chat_id,
-                    (UserPoints.user_id == user_id) | (UserPoints.manual_name == manual_name)
+                    UserPoints.user_id == user_id
                 ).scalar()
                 return points or 0
         except Exception as e:
@@ -194,8 +187,7 @@ class Database:
                 users = db.query(
                     UserPoints.user_id,
                     UserPoints.points,
-                    UserPoints.username,
-                    UserPoints.manual_name
+                    UserPoints.username
                 ).filter(
                     UserPoints.chat_id == chat_id
                 ).order_by(
@@ -204,8 +196,7 @@ class Database:
 
                 return [(user.user_id, {
                     "points": user.points,
-                    "username": user.username,
-                    "manual_name": user.manual_name
+                    "username": user.username
                 }) for user in users]
         except Exception as e:
             logger.error(f"Error in get_top_users: {e}")
@@ -238,11 +229,11 @@ class Database:
             db.query(UserPoints).filter(UserPoints.chat_id == chat_id).delete()
             db.query(Admins).filter(Admins.chat_id == chat_id).delete()
 
-    def get_user_rank(self, chat_id: int, user_id: int = None, manual_name: str = None) -> int:
+    def get_user_rank(self, chat_id: int, user_id: int = None) -> int:
         """Get the rank of a user in a specific chat"""
         with get_db() as db:
             users = db.query(UserPoints).filter(UserPoints.chat_id == chat_id).order_by(UserPoints.points.desc()).all()
             for rank, user in enumerate(users, 1):
-                if user.user_id == user_id or user.manual_name == manual_name:
+                if user.user_id == user_id:
                     return rank
             return -1
