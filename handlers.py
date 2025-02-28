@@ -88,6 +88,14 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
+        # If the command is sent in a group chat, send a message to the admin's private chat
+        if chat.type != 'private':
+            await context.bot.send_message(
+                chat_id=user.id,
+                text="Ви викликали адмін-меню. Продовжимо в приватному чаті."
+            )
+            return ConversationHandler.END
+
         # Store the command message ID for later deletion
         context.user_data['messages_to_delete'] = [update.message.message_id]
 
@@ -215,7 +223,6 @@ async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = "додати" if action == "add" else "забрати"
         await query.message.edit_text(
             f"Введіть кількість балів, які хочете {text} для користувача @{username}:\n\n"
-            f"@{username}\n"
             f"🏅Балів: {user_points}\n"
             f"📍Місце в рейтингу: {user_rank}",
             reply_markup=InlineKeyboardMarkup([
@@ -322,9 +329,22 @@ async def delete_system_messages(update: Update, context: ContextTypes.DEFAULT_T
 async def clear_all_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /allclear command"""
     try:
-        if not is_admin(update.effective_user.id, update.effective_chat.id):
+        user = update.effective_user
+        chat = update.effective_chat
+        if not user or not chat:
+            return ConversationHandler.END
+
+        if not is_admin(user.id, chat.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
-            return
+            return ConversationHandler.END
+
+        # If the command is sent in a group chat, send a message to the admin's private chat
+        if chat.type != 'private':
+            await context.bot.send_message(
+                chat_id=user.id,
+                text="Ви викликали команду очищення балів. Продовжимо в приватному чаті."
+            )
+            return ConversationHandler.END
 
         chat_id = update.effective_chat.id
         db.clear_all_points(chat_id)

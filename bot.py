@@ -58,7 +58,7 @@ def main():
                     CallbackQueryHandler(handlers.points_callback)
                 ]
             },
-            fallbacks=[CallbackQueryHandler(handlers.cancel)],
+            fallbacks=[CommandHandler("cancel", handlers.cancel)],
             per_chat=True,
             per_message=False,  # Set per_message to False
             name="admin_conversation"
