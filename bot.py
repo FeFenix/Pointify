@@ -60,7 +60,7 @@ def main():
             },
             fallbacks=[CallbackQueryHandler(handlers.cancel)],
             per_chat=True,
-            per_message=True,
+            per_message=False,  # Set per_message to False
             name="admin_conversation"
         )
 
