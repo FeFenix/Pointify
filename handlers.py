@@ -24,13 +24,13 @@ CHOOSING_ACTION, CHOOSING_USER, ENTERING_POINTS = range(3)
 db = Database()
 
 async def fetch_and_store_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Fetch and store all users and admins when the bot is added to a chat"""
+    """Fetch and store all admins when the bot is added to a chat"""
     try:
         chat = update.effective_chat
         if not chat:
             return
 
-        # Fetch all members
+        # Fetch all administrators
         members = await context.bot.get_chat_administrators(chat.id)
         for member in members:
             user = member.user
@@ -38,12 +38,7 @@ async def fetch_and_store_users(update: Update, context: ContextTypes.DEFAULT_TY
             if member.status in ['administrator', 'creator']:
                 db.add_admin(chat.id, user.id)
 
-        # Fetch all regular users
-        async for member in context.bot.get_chat_members(chat.id):
-            user = member.user
-            db.add_points(chat.id, user.id, 0, user.username)
-
-        logger.info(f"Fetched and stored all users and admins for chat {chat.id}")
+        logger.info(f"Fetched and stored all admins for chat {chat.id}")
     except Exception as e:
         logger.error(f"Error fetching and storing users: {str(e)}")
 
