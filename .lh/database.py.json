@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 2,
+            "activePatchIndex": 3,
             "patches": [
                 {
                     "date": 1740778312689,
@@ -16,6 +16,10 @@
                 {
                     "date": 1740780899596,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -79,9 +79,9 @@\n     try:\r\n         yield db\r\n         db.commit()\r\n     except Exception as e:\r\n-        logger.error(f\"Database transaction failed: {e}\")\r\n+        logger.error(f\"Database transaction failed: {repr(e)}\")\r\n         db.rollback()\r\n         raise\r\n     finally:\r\n         db.close()\r\n@@ -136,9 +136,9 @@\n                     user.points += points\r\n \r\n                 return True\r\n         except Exception as e:\r\n-            logger.error(f\"Error in add_points: {e}\")\r\n+            logger.error(f\"Error in add_points: {repr(e)}\")\r\n             return False\r\n \r\n     def subtract_points(self, chat_id: int, user_id: int, points: int, username: str = None) -> bool:\r\n         \"\"\"Subtract points from a user in specific chat\"\"\"\r\n@@ -163,9 +163,9 @@\n                 user.points -= points\r\n \r\n                 return True\r\n         except Exception as e:\r\n-            logger.error(f\"Error in subtract_points: {e}\")\r\n+            logger.error(f\"Error in subtract_points: {repr(e)}\")\r\n             return False\r\n \r\n     def get_user_points(self, chat_id: int, user_id: int = None) -> int:\r\n         \"\"\"Get points for a specific user in specific chat\"\"\"\r\n@@ -176,9 +176,9 @@\n                     UserPoints.user_id == user_id\r\n                 ).scalar()\r\n                 return points or 0\r\n         except Exception as e:\r\n-            logger.error(f\"Error in get_user_points: {e}\")\r\n+            logger.error(f\"Error in get_user_points: {repr(e)}\")\r\n             return 0\r\n \r\n     def get_top_users(self, chat_id: int, limit: int = 10) -> list:\r\n         \"\"\"Get top users by points in specific chat\"\"\"\r\n@@ -198,9 +198,9 @@\n                     \"points\": user.points,\r\n                     \"username\": user.username\r\n                 }) for user in users]\r\n         except Exception as e:\r\n-            logger.error(f\"Error in get_top_users: {e}\")\r\n+            logger.error(f\"Error in get_top_users: {repr(e)}\")\r\n             return []\r\n \r\n     def add_admin(self, chat_id: int, user_id: int):\r\n         \"\"\"Add an admin to the database\"\"\"\r\n"
+                },
+                {
+                    "date": 1740781113482,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -30,9 +30,9 @@\n                 pool_timeout=30,\r\n                 pool_recycle=1800,\r\n                 pool_pre_ping=True,\r\n                 connect_args={\r\n-                    'connect_timeout': 10,\r\n+                    'connect_timeout': 20,  # Increase connect timeout\r\n                     'application_name': 'TelegramPointsBot',\r\n                     'sslmode': 'require'\r\n                 }\r\n             )\r\n"
                 }
             ],
             "date": 1740778312689,

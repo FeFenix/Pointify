@@ -31,7 +31,7 @@ def create_db_engine(retries=3, delay=1):
                 pool_recycle=1800,
                 pool_pre_ping=True,
                 connect_args={
-                    'connect_timeout': 10,
+                    'connect_timeout': 20,  # Increase connect timeout
                     'application_name': 'TelegramPointsBot',
                     'sslmode': 'require'
                 }

@@ -3,7 +3,7 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 4,
+            "activePatchIndex": 5,
             "patches": [
                 {
                     "date": 1740776986871,
@@ -24,6 +24,10 @@
                 {
                     "date": 1740780296871,
                     "content": "Index: \n===================================================================\n--- \n+++ \n@@ -55,11 +55,8 @@\n                     CallbackQueryHandler(handlers.user_callback)\r\n                 ],\r\n                 handlers.CHOOSING_POINTS: [\r\n                     CallbackQueryHandler(handlers.points_callback)\r\n-                ],\r\n-                handlers.ADDING_USER: [\r\n-                    MessageHandler(filters.TEXT & ~filters.COMMAND, handlers.add_user)\r\n                 ]\r\n             },\r\n             fallbacks=[CommandHandler(\"cancel\", handlers.cancel)],\r\n             per_chat=True,\r\n"
+                },
+                {
+                    "date": 1740781136321,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -98,4 +98,5 @@\n         sys.exit(1)\r\n \r\n if __name__ == '__main__':\r\n     main()\r\n+    #asdasdasdaw\r\n"
                 }
             ],
             "date": 1740776986871,
