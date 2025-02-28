@@ -5,27 +5,59 @@ from telegram.ext import (
     ConversationHandler,
     CallbackQueryHandler,
     MessageHandler,
-    filters
+    filters,
+    CommandHandler
 )
 import config
 from database import Database
 
 # Configure logging
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format='%(asctime)s - %(name)s - %(levellevel)s - %(message)s',
     level=logging.INFO
 )
 logger = logging.getLogger(__name__)
 
 # Define states
-CHOOSING_ACTION, CHOOSING_USER, ENTERING_POINTS = range(3)
+CHOOSING_ACTION, CHOOSING_USER, CHOOSING_POINTS = range(3)
 
 # Initialize database
 db = Database()
 
-def is_admin(user_id: int) -> bool:
+async def fetch_and_store_users(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Fetch and store all admins when the bot is added to a chat"""
+    try:
+        chat = update.effective_chat
+        if not chat:
+            return
+
+        # Fetch all administrators
+        members = await context.bot.get_chat_administrators(chat.id)
+        for member in members:
+            user = member.user
+            db.add_points(chat.id, user.id, 1, user.username)  # Give 1 point to each user
+            if member.status in ['administrator', 'creator']:
+                db.add_admin(chat.id, user.id)
+
+        logger.info(f"Fetched and stored all admins for chat {chat.id}")
+    except Exception as e:
+        logger.error(f"Error fetching and storing users: {repr(e)}")
+
+async def handle_bot_removed(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle bot removal from chat"""
+    try:
+        chat = update.effective_chat
+        if not chat:
+            return
+
+        db.delete_chat_data(chat.id)
+        logger.info(f"Deleted all data for chat {chat.id}")
+    except Exception as e:
+        logger.error(f"Error handling bot removal: {repr(e)}")
+
+def is_admin(user_id: int, chat_id: int) -> bool:
     """Check if user is admin"""
-    return user_id == config.ADMIN_USER_ID
+    return db.is_admin(chat_id, user_id)
 
 async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle regular messages to track users"""
@@ -34,23 +66,25 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         chat = update.effective_chat
 
         if user and chat and user.username:
-            # Add user to database with 0 points if they don't exist
-            success = db.add_points(chat.id, user.id, 0, user.username)
+            # Add user to database with 1 point if they don't exist
+            success = db.add_points(chat.id, user.id, 1, user.username)
             if success:
                 logger.info(f"Successfully tracked user {user.username} with ID {user.id} in chat {chat.id}")
             else:
                 logger.error(f"Failed to track user {user.username} in chat {chat.id}")
     except Exception as e:
-        logger.error(f"Error handling user message: {str(e)}")
+        logger.error(f"Error handling user message: {repr(e)}")
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /a command"""
     try:
+        logger.info("Admin command invoked")
         user = update.effective_user
-        if not user:
+        chat = update.effective_chat
+        if not user or not chat:
             return ConversationHandler.END
 
-        if not is_admin(user.id):
+        if not is_admin(user.id, chat.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
@@ -61,7 +95,8 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             [
                 InlineKeyboardButton("Додати бали", callback_data='add'),
                 InlineKeyboardButton("Забрати бали", callback_data='subtract')
-            ]
+            ],
+            [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
@@ -73,7 +108,7 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['messages_to_delete'].append(menu_message.message_id)
         return CHOOSING_ACTION
     except Exception as e:
-        logger.error(f"Error in admin_command: {str(e)}")
+        logger.error(f"Error in admin_command: {repr(e)}")
         return ConversationHandler.END
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -81,7 +116,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await update.message.reply_text(config.HELP_MESSAGE)
     except Exception as e:
-        logger.error(f"Error in help_command: {str(e)}")
+        logger.error(f"Error in help_command: {repr(e)}")
 
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle button callbacks"""
@@ -90,11 +125,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         chat_id = query.message.chat_id
         await query.answer()
 
-        if not is_admin(update.effective_user.id):
+        if not is_admin(update.effective_user.id, chat_id):
             await query.message.edit_text(config.NOT_ADMIN_MESSAGE)
             return ConversationHandler.END
 
         action = query.data
+
+        if action == 'delete_system_messages':
+            return await delete_system_messages(update, context)
 
         # Handle finish action
         if action == 'finish':
@@ -104,14 +142,14 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                     try:
                         await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
                     except Exception as e:
-                        logger.error(f"Error deleting message {message_id}: {str(e)}")
+                        logger.error(f"Error deleting message {message_id}: {repr(e)}")
                         continue
 
             # Delete the current menu message
             try:
                 await query.message.delete()
             except Exception as e:
-                logger.error(f"Error deleting menu message: {str(e)}")
+                logger.error(f"Error deleting menu message: {repr(e)}")
 
             context.user_data.clear()
             return ConversationHandler.END
@@ -125,6 +163,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             keyboard.append([InlineKeyboardButton(f"@{username}", callback_data=f"user_{username}")])
 
         keyboard.append([InlineKeyboardButton("Завершити", callback_data='finish')])
+        keyboard.append([InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')])
 
         if not keyboard:
             message = await query.message.edit_text("Наразі немає користувачів у цьому чаті.")
@@ -146,12 +185,12 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 context.user_data['messages_to_delete'] = []
             context.user_data['messages_to_delete'].append(menu_message.message_id)
         except Exception as e:
-            logger.error(f"Error updating menu message: {str(e)}")
+            logger.error(f"Error updating menu message: {repr(e)}")
 
         return CHOOSING_USER
 
     except Exception as e:
-        logger.error(f"Error in button_callback: {str(e)}")
+        logger.error(f"Error in button_callback: {repr(e)}")
         return ConversationHandler.END
 
 async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -168,32 +207,35 @@ async def user_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             logger.error("No action found in context")
             return ConversationHandler.END
 
+        chat_id = context.user_data.get('chat_id')
+        user_id = db.get_user_id_by_username(chat_id, username)
+        user_points = db.get_user_points(chat_id, user_id)
+        user_rank = db.get_user_rank(chat_id, user_id)
+
         text = "додати" if action == "add" else "забрати"
         await query.message.edit_text(
-            f"Введіть кількість балів, які хочете {text} для користувача @{username}:"
+            f"Введіть кількість балів, які хочете {text} для користувача @{username}:\n\n"
+            f"@{username}\n"
+            f"🏅Балів: {user_points}\n"
+            f"📍Місце в рейтингу: {user_rank}",
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton(str(i), callback_data=f"points_{i}") for i in range(1, 11)],
+                [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
+            ])
         )
-        return ENTERING_POINTS
+        return CHOOSING_POINTS
     except Exception as e:
-        logger.error(f"Error in user_callback: {str(e)}")
+        logger.error(f"Error in user_callback: {repr(e)}")
         return ConversationHandler.END
 
-async def points_entered(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle points entry"""
+async def points_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Handle points selection"""
     try:
-        if 'messages_to_delete' not in context.user_data:
-            context.user_data['messages_to_delete'] = []
+        query = update.callback_query
+        await query.answer()
 
-        # Store user's points message for deletion
-        context.user_data['messages_to_delete'].append(update.message.message_id)
-
-        points = int(update.message.text)
+        points = int(query.data.replace("points_", ""))
         chat_id = context.user_data.get('chat_id')
-
-        if points <= 0:
-            message = await update.message.reply_text("Кількість балів повинна бути додатньою!")
-            context.user_data['messages_to_delete'].append(message.message_id)
-            return ENTERING_POINTS
-
         username = context.user_data.get('username')
         action = context.user_data.get('action')
 
@@ -213,18 +255,21 @@ async def points_entered(update: Update, context: ContextTypes.DEFAULT_TYPE):
             db.subtract_points(chat_id, user_id, points, username)
             message = f"{config.POINTS_UPDATED_MESSAGE} Користувач: @{username}, Бали: -{points}"
 
+        logger.info(f"Points updated for user {username}: {points} points")
+
         keyboard = [
             [
                 InlineKeyboardButton("Додати бали", callback_data='add'),
                 InlineKeyboardButton("Забрати бали", callback_data='subtract')
             ],
-            [InlineKeyboardButton("Завершити", callback_data='finish')]
+            [InlineKeyboardButton("Завершити", callback_data='finish')],
+            [InlineKeyboardButton("Видалити системні повідомлення", callback_data='delete_system_messages')]
         ]
         reply_markup = InlineKeyboardMarkup(keyboard)
 
         # Store all bot responses for deletion
-        result_message = await update.message.reply_text(message)
-        menu_message = await update.message.reply_text(
+        result_message = await query.message.reply_text(message)
+        menu_message = await query.message.reply_text(
             text="Оберіть наступну дію:",
             reply_markup=reply_markup
         )
@@ -235,12 +280,8 @@ async def points_entered(update: Update, context: ContextTypes.DEFAULT_TYPE):
         ])
 
         return CHOOSING_ACTION
-    except ValueError:
-        message = await update.message.reply_text("Будь ласка, введіть числове значення!")
-        context.user_data['messages_to_delete'].append(message.message_id)
-        return ENTERING_POINTS
     except Exception as e:
-        logger.error(f"Error in points_entered: {str(e)}")
+        logger.error(f"Error in points_callback: {repr(e)}")
         return ConversationHandler.END
 
 async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -250,21 +291,51 @@ async def cancel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Операцію скасовано.")
         return ConversationHandler.END
     except Exception as e:
-        logger.error(f"Error in cancel: {str(e)}")
+        logger.error(f"Error in cancel: {repr(e)}")
+        return ConversationHandler.END
+
+async def delete_system_messages(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Delete system messages"""
+    try:
+        query = update.callback_query
+        chat_id = query.message.chat_id
+        await query.answer()
+
+        if 'messages_to_delete' in context.user_data:
+            for message_id in context.user_data['messages_to_delete']:
+                try:
+                    await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+                except Exception as e:
+                    logger.error(f"Error deleting message {message_id}: {repr(e)}")
+                    continue
+
+        context.user_data.clear()
+        try:
+            await query.message.edit_text("Системні повідомлення видалено.")
+        except Exception as e:
+            logger.error(f"Error in delete_system_messages: {repr(e)}")
+        return ConversationHandler.END
+    except Exception as e:
+        logger.error(f"Error in delete_system_messages: {repr(e)}")
         return ConversationHandler.END
 
 async def clear_all_points(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /allclear command"""
     try:
-        if not is_admin(update.effective_user.id):
+        user = update.effective_user
+        chat = update.effective_chat
+        if not user or not chat:
+            return ConversationHandler.END
+
+        if not is_admin(user.id, chat.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
-            return
+            return ConversationHandler.END
 
         chat_id = update.effective_chat.id
         db.clear_all_points(chat_id)
         await update.message.reply_text("Всі бали були успішно очищені!")
     except Exception as e:
-        logger.error(f"Error in clear_all_points: {str(e)}")
+        logger.error(f"Error in clear_all_points: {repr(e)}")
 
 async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle the /top command"""
@@ -274,7 +345,7 @@ async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not top_users:
             await update.message.reply_text("В базі даних ще немає користувачів!")
-            return
+            return ConversationHandler.END
 
         message = "⚠️👀 Люди, Що Бачили Все! 👀⚠️\n\n"
         for i, (user_id, user_data) in enumerate(top_users, 1):
@@ -283,5 +354,7 @@ async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
             message += f"{i}. {emoji} @{username}: {user_data['points']} балів\n"
 
         await update.message.reply_text(message)
+        return ConversationHandler.END
     except Exception as e:
-        logger.error(f"Error in show_top: {str(e)}")
+        logger.error(f"Error in show_top: {repr(e)}")
+        return ConversationHandler.END

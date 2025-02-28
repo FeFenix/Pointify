@@ -31,7 +31,7 @@ def create_db_engine(retries=3, delay=1):
                 pool_recycle=1800,
                 pool_pre_ping=True,
                 connect_args={
-                    'connect_timeout': 10,
+                    'connect_timeout': 20,  # Increase connect timeout
                     'application_name': 'TelegramPointsBot',
                     'sslmode': 'require'
                 }
@@ -58,9 +58,16 @@ class UserPoints(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     chat_id = Column(BigInteger, index=True)
-    user_id = Column(BigInteger, index=True)
-    username = Column(String)
+    user_id = Column(BigInteger, index=True, nullable=True)
+    username = Column(String, nullable=True)
     points = Column(Integer, default=0)
+
+class Admins(Base):
+    __tablename__ = "admins"
+
+    id = Column(Integer, primary_key=True, index=True)
+    chat_id = Column(BigInteger, index=True)
+    user_id = Column(BigInteger, index=True)
 
 # Create tables only if they don't exist
 Base.metadata.create_all(bind=engine, checkfirst=True)
@@ -73,7 +80,7 @@ def get_db():
         yield db
         db.commit()
     except Exception as e:
-        logger.error(f"Database transaction failed: {e}")
+        logger.error(f"Database transaction failed: {repr(e)}")
         db.rollback()
         raise
     finally:
@@ -102,8 +109,7 @@ class Database:
         """Get list of all usernames in specific chat"""
         with get_db() as db:
             users = db.query(UserPoints.username).filter(
-                UserPoints.chat_id == chat_id,
-                UserPoints.username.isnot(None)
+                UserPoints.chat_id == chat_id
             ).all()
             return [user.username for user in users]
 
@@ -131,7 +137,7 @@ class Database:
 
                 return True
         except Exception as e:
-            logger.error(f"Error in add_points: {e}")
+            logger.error(f"Error in add_points: {repr(e)}")
             return False
 
     def subtract_points(self, chat_id: int, user_id: int, points: int, username: str = None) -> bool:
@@ -158,10 +164,10 @@ class Database:
 
                 return True
         except Exception as e:
-            logger.error(f"Error in subtract_points: {e}")
+            logger.error(f"Error in subtract_points: {repr(e)}")
             return False
 
-    def get_user_points(self, chat_id: int, user_id: int) -> int:
+    def get_user_points(self, chat_id: int, user_id: int = None) -> int:
         """Get points for a specific user in specific chat"""
         try:
             with get_db() as db:
@@ -171,7 +177,7 @@ class Database:
                 ).scalar()
                 return points or 0
         except Exception as e:
-            logger.error(f"Error in get_user_points: {e}")
+            logger.error(f"Error in get_user_points: {repr(e)}")
             return 0
 
     def get_top_users(self, chat_id: int, limit: int = 10) -> list:
@@ -193,5 +199,41 @@ class Database:
                     "username": user.username
                 }) for user in users]
         except Exception as e:
-            logger.error(f"Error in get_top_users: {e}")
+            logger.error(f"Error in get_top_users: {repr(e)}")
             return []
+
+    def add_admin(self, chat_id: int, user_id: int):
+        """Add an admin to the database"""
+        with get_db() as db:
+            admin = db.query(Admins).filter(
+                Admins.chat_id == chat_id,
+                Admins.user_id == user_id
+            ).first()
+
+            if not admin:
+                admin = Admins(chat_id=chat_id, user_id=user_id)
+                db.add(admin)
+
+    def is_admin(self, chat_id: int, user_id: int) -> bool:
+        """Check if a user is an admin in a specific chat"""
+        with get_db() as db:
+            admin = db.query(Admins).filter(
+                Admins.chat_id == chat_id,
+                Admins.user_id == user_id
+            ).first()
+            return admin is not None
+
+    def delete_chat_data(self, chat_id: int):
+        """Delete all data related to a specific chat"""
+        with get_db() as db:
+            db.query(UserPoints).filter(UserPoints.chat_id == chat_id).delete()
+            db.query(Admins).filter(Admins.chat_id == chat_id).delete()
+
+    def get_user_rank(self, chat_id: int, user_id: int = None) -> int:
+        """Get the rank of a user in a specific chat"""
+        with get_db() as db:
+            users = db.query(UserPoints).filter(UserPoints.chat_id == chat_id).order_by(UserPoints.points.desc()).all()
+            for rank, user in enumerate(users, 1):
+                if user.user_id == user_id:
+                    return rank
+            return -1
