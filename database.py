@@ -7,6 +7,16 @@ import logging
 from sqlalchemy.exc import OperationalError
 from time import sleep
 
+
+database_url = os.getenv("DATABASE_URL")
+
+# Додай цей рядок для виводу значення змінної у логи
+print(f"DATABASE_URL: {database_url}")  
+
+if not database_url:
+    raise Exception("DATABASE_URL environment variable is not set")
+
+
 # Configure logging with less verbose output
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
