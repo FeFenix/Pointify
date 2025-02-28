@@ -7,9 +7,6 @@ import logging
 from sqlalchemy.exc import OperationalError
 from time import sleep
 
-
-database_url = os.getenv("DATABASE_URL")
-
 # Configure logging with less verbose output
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -109,6 +106,30 @@ class Database:
                 UserPoints.username.isnot(None)
             ).all()
             return [user.username for user in users]
+
+    def add_user(self, chat_id: int, user_id: int, username: str) -> bool:
+        """Додає/оновлює користувача без зміни балів"""
+        try:
+            with get_db() as db_session:
+                user = db_session.query(UserPoints).filter(
+                    UserPoints.chat_id == chat_id,
+                    UserPoints.user_id == user_id
+                ).first()
+
+                if not user:
+                    user = UserPoints(
+                        chat_id=chat_id,
+                        user_id=user_id,
+                        points=0,
+                        username=username
+                    )
+                    db_session.add(user)
+                elif user.username != username:
+                    user.username = username
+                return True
+        except Exception as e:
+            logger.error(f"Помилка додавання користувача: {e}")
+            return False
 
     def add_points(self, chat_id: int, user_id: int, points: int, username: str = None) -> bool:
         """Add points to a user in specific chat"""
