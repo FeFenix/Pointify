@@ -27,6 +27,10 @@ def is_admin(user_id: int) -> bool:
     """Check if user is admin"""
     return user_id == config.ADMIN_USER_ID
 
+def is_allowed_user(user_id: int) -> bool:
+    """Check if user is allowed"""
+    return user_id in config.ALLOWED_USERS
+
 async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle regular messages to track users"""
     try:
@@ -34,6 +38,10 @@ async def handle_user_message(update: Update, context: ContextTypes.DEFAULT_TYPE
         chat = update.effective_chat
 
         if user and chat and user.username:
+            # Додайте перевірку на дозволених користувачів
+            if not is_allowed_user(user.id):
+                return  # Якщо користувач не дозволений, просто виходимо
+
             # Add user to database with 0 points if they don't exist
             success = db.add_points(chat.id, user.id, 0, user.username)
             if success:
@@ -52,6 +60,11 @@ async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         if not is_admin(user.id):
             await update.message.reply_text(config.NOT_ADMIN_MESSAGE)
+            return ConversationHandler.END
+
+        # Додайте перевірку на дозволених користувачів
+        if not is_allowed_user(user.id):
+            await update.message.reply_text("Ви не маєте доступу до цієї команди.")
             return ConversationHandler.END
 
         # Store the command message ID for later deletion
@@ -278,7 +291,7 @@ async def show_top(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         message = "⚠️👀 Люди, Що Бачили Все! 👀⚠️\n\n"
         for i, (user_id, user_data) in enumerate(top_users, 1):
-            username = user_data["username"] or f"User {user_id}"
+            username = user_data["username"] or f"User  {user_id}"
             emoji = "👑" if i == 1 else "🏆" if i == 2 else "🐉" if i == 3 else "🚀"
             message += f"{i}. {emoji} @{username}: {user_data['points']} балів\n"
 
